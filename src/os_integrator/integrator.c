@@ -301,7 +301,20 @@ void OS_IntegratorD(IntegratorConfig **integrator_config)
                             tmpstr++;
                         }
                     }
-                    fprintf(fp, "alertdate='%s'\nalertlocation='%s'\nruleid='%d'\nalertlevel='%d'\nruledescription='%s'\nalertlog='%s'\nsrcip='%s'", al_data->date, al_data->location, al_data->rule, al_data->level, al_data->comment, al_data->log[0], al_data->srcip == NULL?"":al_data->srcip);
+                    fprintf(fp, "alertdate='%s'\n", al_data->date);
+                    fprintf(fp, "alertlocation='%s'\n", al_data->location);
+                    fprintf(fp, "ruleid='%d'\n", al_data->rule);
+                    fprintf(fp, "alertlevel='%d'\n", al_data->level);
+                    fprintf(fp, "ruledescription='%s'\n", al_data->comment);
+                    fprintf(fp, "alertlog='%s", al_data->log[0]);
+                    int log_i = 1;
+                    while(al_data->log[log_i])
+                    {
+                        fprintf(fp, "\n%s", al_data->log[log_i]);
+                        log_i++;
+                    }
+                    fprintf(fp, "'\n");
+                    fprintf(fp, "srcip='%s'\n", al_data->srcip == NULL ? "" : al_data->srcip);
                     temp_file_created = 1;
                     fclose(fp);
                 }

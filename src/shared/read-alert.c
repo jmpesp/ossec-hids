@@ -125,7 +125,7 @@ alert_data *GetAlertData(int flag, FILE *fp)
     while(fgets(str, OS_BUFFER_SIZE, fp) != NULL)
     {
         
-        /* Enf of alert */
+        /* End of alert */
         if(strcmp(str, "\n") == 0 && log_size > 0)
         {
             /* Found in here */

@@ -36,9 +36,13 @@ fi
 postfile=`mktemp`
 
 
-echo 'payload={"username":"OSSEC2slack Integration from '$alertlocation'", "icon_emoji": ":ghost:", "text": "OSSEC Alert\n```'$alertdate $alertlocation'\nRule:'$ruleid' (level '$alertlevel'): '$ruledescription'\nIP:'$srcip'\n'$alertlog'\n```"}' > $postfile
+echo -n 'payload={"username":"OSSEC2slack Integration from ' > $postfile
+echo -n "$alertlocation" >> $postfile
+echo -n '", "icon_emoji": ":ghost:", "text": "OSSEC Alert\n```' >> $postfile
+echo -n "$alertdate $alertlocation\nRule:$ruleid (level $alertlevel): $ruledescription\nIP:$srcip\n$alertlog\n" >> $postfile
+echo -n '```"}' >> $postfile
 
-res=`curl -s --data @$postfile "$WEBHOOK"`
+res=`curl -s --data-binary @$postfile "$WEBHOOK"`
 echo $res | grep "ok" >/dev/null 2>&1
 if [ $? = 0 ]; then
     echo "`date` $0 Slack integration ran successfully" >> ${PWD}/logs/integrations.log

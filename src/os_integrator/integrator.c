@@ -28,6 +28,7 @@ void OS_IntegratorD(IntegratorConfig **integrator_config)
     char exec_tmp_file[2048 + 1];
     char exec_full_cmd[4096 + 1];
     FILE *fp;
+    int log_i;
 
     file_queue *fileq;
     alert_data *al_data;
@@ -224,58 +225,69 @@ void OS_IntegratorD(IntegratorConfig **integrator_config)
                 }
                 else
                 {
-                    int log_count = 0;
-                    char *tmpstr = al_data->log[0];
-                    while(*tmpstr != '\0')
+                    /* sanitize all output before sending to
+                       integration. especially important because
+                       some integrations send to shell scripts and
+                       variable definition will not be correct */
+                    log_i = 0;
+                    while(al_data->log[log_i])
                     {
-                        if(*tmpstr == '\'')
+                        int logline_length = 0;
+                        char *tmpstr = al_data->log[log_i];
+                        while(*tmpstr != '\0')
                         {
-                            *tmpstr = ' ';
-                        }
-                        else if(*tmpstr == '\\')
-                        {
-                            *tmpstr = '/';
-                        }
-                        else if(*tmpstr == '`')
-                        {
-                            *tmpstr = ' ';
-                        }
-                        else if(*tmpstr == '"')
-                        {
-                            *tmpstr = ' ';
-                        }
-                        else if(*tmpstr == ';')
-                        {
-                            *tmpstr = ',';
-                        }
-                        else if(*tmpstr == '!')
-                        {
-                            *tmpstr = ' ';
-                        }
-                        else if(*tmpstr == '$')
-                        {
-                            *tmpstr = ' ';
+                            if(*tmpstr == '\'')
+                            {
+                                *tmpstr = ' ';
+                            }
+                            else if(*tmpstr == '\\')
+                            {
+                                *tmpstr = '/';
+                            }
+                            else if(*tmpstr == '`')
+                            {
+                                *tmpstr = ' ';
+                            }
+                            else if(*tmpstr == '"')
+                            {
+                                *tmpstr = ' ';
+                            }
+                            else if(*tmpstr == ';')
+                            {
+                                *tmpstr = ',';
+                            }
+                            else if(*tmpstr == '!')
+                            {
+                                *tmpstr = ' ';
+                            }
+                            else if(*tmpstr == '$')
+                            {
+                                *tmpstr = ' ';
+                            }
+                            else if(*tmpstr < 32 || *tmpstr > 122)
+                            {
+                                *tmpstr = ' ';
+                            }
+
+                            logline_length++;
+                            tmpstr++;
+
+                            if(logline_length >= 465)
+                            {
+                                *tmpstr='\0';
+                                *(tmpstr -1)='.';
+                                *(tmpstr -2)='.';
+                                *(tmpstr -3)='.';
+                                break;
+                            }
                         }
 
-                        else if(*tmpstr < 32 || *tmpstr > 122)
-                        {
-                            *tmpstr = ' ';
-                        }
-                        log_count++;
-                        tmpstr++;
+                        log_i++;
+                    }
 
-                        if(log_count >= 465)
-                        {
-                            *tmpstr = '\0'; 
-                            *(tmpstr -1) = '.'; 
-                            *(tmpstr -2) = '.'; 
-                            *(tmpstr -3) = '.'; 
-                            break;
-                        }
-                    } 
                     if(al_data->srcip != NULL)
                     {
-                        tmpstr = al_data->srcip;
+                        char *tmpstr = al_data->srcip;
                         while(*tmpstr != '\0')
                         {
                             if(*tmpstr == '\'')
@@ -301,13 +313,14 @@ void OS_IntegratorD(IntegratorConfig **integrator_config)
                             tmpstr++;
                         }
                     }
+
                     fprintf(fp, "alertdate='%s'\n", al_data->date);
                     fprintf(fp, "alertlocation='%s'\n", al_data->location);
                     fprintf(fp, "ruleid='%d'\n", al_data->rule);
                     fprintf(fp, "alertlevel='%d'\n", al_data->level);
                     fprintf(fp, "ruledescription='%s'\n", al_data->comment);
                     fprintf(fp, "alertlog='%s", al_data->log[0]);
-                    int log_i = 1;
+                    log_i = 1;
                     while(al_data->log[log_i])
                     {
                         fprintf(fp, "\n%s", al_data->log[log_i]);

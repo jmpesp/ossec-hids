@@ -345,7 +345,7 @@ alert_data *GetAlertData(int flag, FILE *fp)
                 os_strdup(p, user);
             }
             /* It is a log message */
-            else if(log_size < 30)
+            else if(log_size < 40)
             {
                 os_clearnl(str,p);
 
@@ -365,6 +365,14 @@ alert_data *GetAlertData(int flag, FILE *fp)
                 
                 os_realloc(log, (log_size +2)*sizeof(char *), log);
                 os_strdup(str, log[log_size]); 
+                log_size++;
+                log[log_size] = NULL;
+            }
+            /* It is a very long log message */
+            else if(log_size == 40)
+            {
+                os_realloc(log, (log_size +2)*sizeof(char *), log);
+                os_strdup("--More--", log[log_size]);
                 log_size++;
                 log[log_size] = NULL;
             }
